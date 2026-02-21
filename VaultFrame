@@ -1,0 +1,77 @@
+package ui;
+
+import vault.VaultService;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class VaultFrame extends JFrame {
+
+    private final String user;
+    private JTextArea vaultArea;
+
+    public VaultFrame(String user) {
+        this.user = user;
+
+        setTitle("Password Vault");
+        setSize(500, 400);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        vaultArea = new JTextArea();
+        vaultArea.setEditable(false);
+
+        JButton generateBtn = new JButton("Generate Password");
+        JButton addBtn = new JButton("Add Credential");
+        JButton refreshBtn = new JButton("Refresh Vault");
+
+        JPanel topPanel = new JPanel();
+        topPanel.add(generateBtn);
+        topPanel.add(addBtn);
+        topPanel.add(refreshBtn);
+
+        add(topPanel, BorderLayout.NORTH);
+        add(new JScrollPane(vaultArea), BorderLayout.CENTER);
+
+        generateBtn.addActionListener(e -> generatePassword());
+        addBtn.addActionListener(e -> addCredential());
+        refreshBtn.addActionListener(e -> refreshVault());
+    }
+
+    private void generatePassword() {
+        String pwd = VaultService.generatePassword(16);
+        JOptionPane.showMessageDialog(this, "Generated Password:\n" + pwd);
+    }
+
+    private void addCredential() {
+        JTextField site = new JTextField();
+        JTextField username = new JTextField();
+        JTextField password = new JTextField();
+
+        Object[] fields = {
+                "Site:", site,
+                "Username:", username,
+                "Password:", password
+        };
+
+        int result = JOptionPane.showConfirmDialog(this, fields, "Add Credential", JOptionPane.OK_CANCEL_OPTION);
+
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                VaultService.addCredential(user, site.getText(), username.getText(), password.getText());
+                refreshVault();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error saving credential.");
+            }
+        }
+    }
+
+    private void refreshVault() {
+        vaultArea.setText("");
+        try {
+            vaultArea.append(VaultService.getFormattedVault(user));
+        } catch (Exception e) {
+            vaultArea.setText("Unable to load vault.");
+        }
+    }
+}
